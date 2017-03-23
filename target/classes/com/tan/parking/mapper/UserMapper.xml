@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.tan.parking.dao.IUserDao">
+	<resultMap id="BaseResultMap" type="com.tan.parking.model.User">
+		<result column="username" property="username" jdbcType="VARCHAR" />
+		<result column="password" property="password" jdbcType="VARCHAR" />
+	</resultMap>
+	<select id="getUserByUserName" resultMap="BaseResultMap"
+		parameterType="String">
+		SELECT * from user where username = #{username}
+	</select>
+
+	<resultMap type="com.tan.parking.model.UserInfo" id="UserInfoResultMap">
+		<result column="username" property="username" jdbcType="VARCHAR" />
+		<result column="carnum" property="carnum" jdbcType="VARCHAR" />
+		<result column="constimes" property="constimes" jdbcType="INTEGER" />
+		<result column="noconstimes" property="noconstimes" jdbcType="INTEGER" />
+	</resultMap>
+
+	<select id="getUserInfo" resultMap="UserInfoResultMap"
+		parameterType="String">
+		select * from userinfo where username = #{username}
+	</select>
+
+	<update id="forgetPassword" parameterType="String">
+		update user set
+		password = #{1} where username = #{0}
+	</update>
+
+	<update id="updateUserInfo" parameterType="String">
+		update userinfo set
+		noconstimes = (select count(*) from records where username= #{username}
+		and enable =0)  where username = #{username};
+	</update>
+	
+	<select id="getNoconstimes" parameterType="String">
+		select noconstimes from userinfo where username = #{username}
+	</select>
+	
+	<insert id="addToBlacklist" parameterType="String"
+		useGeneratedKeys="true" keyProperty="username">
+		insert ignore into
+		blacklist(username,time) values(#{username} , #{time})
+	</insert>
+
+	<insert id="registerUser" parameterType="String"
+		useGeneratedKeys="true" keyProperty="username">
+		insert into
+		user(username,password) values(#{username} , #{password})
+	</insert>
+
+	<update id="motifyPassword" parameterType="String">
+		update user set
+		password = #{newpassword} where username = #{username} and password =
+		#{password}
+	</update>
+
+	<update id="changeConsume">
+		update userinfo set
+		changemoney = changemoney-#{num}
+		where username = #{username}
+	</update>
+	
+	<update id="charge">
+		update userinfo set
+		changemoney = changemoney+#{num}
+		where username = #{username}
+	</update>
+	
+	
+
+</mapper>

@@ -1,0 +1,92 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.tan.parking.dao.IRecordDao">
+
+	<select id="getFreeplaceList" resultType="java.lang.Integer"
+		parameterType="String">
+		select parking_num from parkingnums where parking_id =
+		(select parking_id from parkings where parking_name = #{parking_name})
+	</select>
+
+	<select id="getRecords" resultType="com.tan.parking.model.Record"
+		parameterType="String">
+		select
+		r.record_id,p.parking_name,r.parking_num,r.complete,r.expense,r.start_time,r.end_time,r.order_time,r.enable,r.remark
+		from records r,parkings p
+		where r.parking_id = p.parking_id and
+		r.username = #{username}
+	</select>
+
+
+	<resultMap type="com.tan.parking.model.FreeplaceList" id="freeplaceList">
+		<result property="parking_id" column="parking_id" />
+		<collection property="list" ofType="java.lang.Integer">
+			<result property="parking_num" column="parking_num" />
+		</collection>
+	</resultMap>
+	<select id="getFreeplaceList2" resultMap="freeplaceList">
+		select p1.parking_id ,
+		p2.parking_num from parkings p1,
+		parkingnums p2 where
+		p1.parking_id =
+		p2.parking_id and
+		parking_name = #{parking_name} and
+		local = #{local}
+		and parking_num not in (select parking_num from records
+		where complete
+		= 0 and enable = 1 and ((#{start_time} >start_time and end_time >
+		#{start_time}) or
+		(#{end_time} > start_time and end_time > #{end_time})
+		or
+		(start_time >
+		#{start_time} and #{end_time} > end_time)) AND
+		parking_id =
+		p1.parking_id )
+	</select>
+
+	<resultMap type="com.tan.parking.model.Parkinglot" id="parkinglot">
+		<result column="parking_id" property="parking_id" />
+		<result column="parking_name" property="parking_name" />
+		<result column="local" property="local" />
+		<result column="flag" property="flag" />
+	</resultMap>
+
+	<select id="getParkinglot" resultType="com.tan.parking.model.Parkinglot">
+		select * from parkings
+		where parking_name = #{parking_name} and local =#{local}
+	</select>
+
+	<insert id="orderParking" useGeneratedKeys="true" keyProperty="record_id">
+		insert into
+		records(record_id,parking_id,parking_num,start_time,end_time,order_time,complete,expense,username,enable,remark)
+		values(#{record_id},#{parking_id},#{parking_num},#{start_time},#{end_time},#{order_time},#{complete},#{expense},#{username},1,'')
+	</insert>
+
+	<update id="updateRecord" parameterType="String">
+		update records set
+		complete = 1,remark='订单过期',enable = 0 where #{order_time} > end_time and enable = 1 and complete = 0;
+	</update>
+
+	<select id="getEnableSpace" resultType="java.lang.Integer"
+		parameterType="String">
+		select count(enable
+		) from parkings p1,
+		parkingnums p2
+		where
+		p1.parking_id =
+		p2.parking_id and
+		parking_name = #{parking_name}
+		and
+		local = #{local}
+		and parking_num not in (select parking_num from
+		records
+		where complete
+		= 0 and enable =1 and #{current_time} > start_time and end_time
+		> #{current_time} AND parking_id = p1.parking_id )
+	</select>
+
+	<update id="cancelOrder" parameterType="String">
+		update records set
+		enable = 0,remark='用户取消',complete =1  where record_id = #{order_id}
+	</update>
+
+</mapper>
